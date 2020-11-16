@@ -3,6 +3,7 @@ import { visitorKeys, VisitorKeys } from '@typescript-eslint/visitor-keys';
 
 interface VisitorOptions {
   childVisitorKeys?: VisitorKeys | null;
+  visitChildrenEvenIfSelectorExists?: boolean;
 }
 
 function isObject(obj: unknown): obj is Record<string, unknown> {
@@ -18,8 +19,11 @@ type NodeVisitor = {
 
 abstract class VisitorBase {
   readonly #childVisitorKeys: VisitorKeys;
+  readonly #visitChildrenEvenIfSelectorExists: boolean;
   constructor(options: VisitorOptions) {
     this.#childVisitorKeys = options.childVisitorKeys ?? visitorKeys;
+    this.#visitChildrenEvenIfSelectorExists =
+      options.visitChildrenEvenIfSelectorExists ?? false;
   }
 
   /**
@@ -69,7 +73,10 @@ abstract class VisitorBase {
 
     const visitor = (this as NodeVisitor)[node.type];
     if (visitor) {
-      return visitor.call(this, node);
+      visitor.call(this, node);
+      if (!this.#visitChildrenEvenIfSelectorExists) {
+        return;
+      }
     }
 
     this.visitChildren(node);
